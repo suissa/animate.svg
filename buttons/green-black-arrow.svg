@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Botão neon com preenchimento interno "de carga" (3 camadas)
+
+  viewBox 0 0 260 120
+    - CAMADA 1 (topo, desenhada por último) : verde neon com os círculos FURADOS (chevron ">")
+    - CAMADA 2 (meio)  : os mesmos 7 círculos em preto, que crescem do CENTRO para fora
+    - CAMADA 3 (fundo) : verde neon sólido, tamanho total do botão
+
+  Não existe mais barra deslizante: cada círculo enche de preto sozinho, a partir do centro.
+  A ordem é por par espelhado (2 círculos da mesma coluna de uma vez), até sobrar só a ponta:
+      (1 + 7) x=114  ->  (2 + 6)  ->  (3 + 5)  ->  (4) ponta
+  Ciclo de 6s: enche (0%–40%), segura cheio (40%–88%), esvazia do centro pra fora (88%–96%).
+  animation-delay:-2.4s pula a construção na abertura — o botão já nasce com o ">" completo.
+
+  Ajuste rápido: 6s em .fill (duração do ciclo) e as porcentagens dos @keyframes.
+  Dica: descomente o <rect> de fundo abaixo para ver o neon sobre fundo escuro.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 260 120"
+     width="520" height="240"
+     role="img"
+     aria-labelledby="btnTitle btnDesc">
+
+  <title id="btnTitle">Botão neon com preenchimento de carga</title>
+  <desc id="btnDesc">Sete círculos transparentes formam um chevron para a direita dentro de um botão verde neon; cada círculo é preenchido de preto a partir do centro, em pares espelhados, até completar a ponta.</desc>
+
+  <!--
+    Animação em CSS puro (não SMIL): roda em navegador comum, em <img>, em <object>
+    e em preview de editor/webview.
+
+    O truque do "começa no centro": scale(0) -> scale(1) com transform-box:fill-box
+    e transform-origin:center. O scale parte do centro do próprio círculo, então
+    parece o preto subindo de dentro pra fora.
+  -->
+  <style>
+    .fill {
+      transform-box: fill-box;
+      transform-origin: center;
+      /* Estado base: vazio. Se a animação não rodar (viewer sem suporte), o
+         chevron aparece como 7 furos vazios — nunca como preto "do nada". */
+      transform: scale(0);
+      animation-duration: 6s;
+      animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+      animation-iteration-count: infinite;
+      /* Delay negativo = pula os 2.4s de construção na abertura: já abre completo.
+         Mude para 0s se quiser voltar a ver o preenchimento desde o começo. */
+      animation-delay: -2.4s;
+    }
+
+    /* Par 1 — coluna x=114 (borda esquerda do chevron) */
+    .d1, .d7 { animation-name: fillA; }
+    @keyframes fillA {
+      0%        { transform: scale(0); }
+      10%, 88%  { transform: scale(1); }
+      96%, 100% { transform: scale(0); }
+    }
+
+    /* Par 2 — coluna x≈125 */
+    .d2, .d6 { animation-name: fillB; }
+    @keyframes fillB {
+      0%, 10%   { transform: scale(0); }
+      20%, 88%  { transform: scale(1); }
+      96%, 100% { transform: scale(0); }
+    }
+
+    /* Par 3 — coluna x≈135 */
+    .d3, .d5 { animation-name: fillC; }
+    @keyframes fillC {
+      0%, 20%   { transform: scale(0); }
+      30%, 88%  { transform: scale(1); }
+      96%, 100% { transform: scale(0); }
+    }
+
+    /* Ponta — sozinha */
+    .d4 { animation-name: fillD; }
+    @keyframes fillD {
+      0%, 30%   { transform: scale(0); }
+      40%, 88%  { transform: scale(1); }
+      96%, 100% { transform: scale(0); }
+    }
+  </style>
+
+  <!-- <rect x="0" y="0" width="260" height="120" fill="#0B0F0C"/>  (descomente para fundo escuro) -->
+
+  <defs>
+    <!-- Recorte do formato do botão (aplicado nas camadas 2 e 3) -->
+    <clipPath id="btnClip" clipPathUnits="userSpaceOnUse">
+      <rect x="20" y="20" width="220" height="80" rx="22"/>
+    </clipPath>
+
+    <!-- Recorte da camada 1: branco = passa, preto = furo -->
+    <mask id="dotsMask" maskUnits="userSpaceOnUse" x="0" y="0" width="260" height="120">
+      <rect x="20" y="20" width="220" height="80" rx="22" fill="#FFFFFF"/>
+      <g fill="#000000">
+        <circle cx="114"   cy="42" r="3.5"/>
+        <circle cx="124.5" cy="47.9" r="3.5"/>
+        <circle cx="134.9" cy="53.8" r="3.5"/>
+        <circle cx="146"   cy="60" r="3.5"/>
+        <circle cx="135.5" cy="65.9" r="3.5"/>
+        <circle cx="125.1" cy="71.8" r="3.5"/>
+        <circle cx="114"   cy="78" r="3.5"/>
+      </g>
+    </mask>
+
+    <!-- Corpo verde neon (mesmo gradiente nas camadas 1 e 3 -> emenda invisível) -->
+    <linearGradient id="neonFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#9CFF7A"/>
+      <stop offset="0.45" stop-color="#34FF57"/>
+      <stop offset="1"    stop-color="#00B93B"/>
+    </linearGradient>
+
+    <!-- Brilho sutil do topo (decoração da camada 1, também furada) -->
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0.34"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Sombreado interno dos furos: é o que faz o ">" continuar legível antes de encher de preto -->
+    <radialGradient id="holeShade" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#00631E" stop-opacity="0.55"/>
+      <stop offset="0.7"  stop-color="#00631E" stop-opacity="0.38"/>
+      <stop offset="1"    stop-color="#00631E" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Halo do neon -->
+    <filter id="neonGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- 0) Halo neon (atrás de tudo, só decoração) -->
+  <rect x="20" y="20" width="220" height="80" rx="22"
+        fill="none" stroke="#34FF57" stroke-width="7"
+        filter="url(#neonGlow)" opacity="0.85"/>
+
+  <!-- CAMADA 3 — fundo: verde neon fixo, tamanho total do botão
+       (mesma linha de brilho da camada 1, senão os furos ficariam com outro tom) -->
+  <g clip-path="url(#btnClip)">
+    <rect x="20" y="20" width="220" height="80" fill="url(#neonFill)"/>
+    <rect x="20" y="20" width="220" height="80" fill="url(#sheen)"/>
+    <g fill="url(#holeShade)">
+      <circle cx="114"   cy="42" r="3.5"/>
+      <circle cx="124.5" cy="47.9" r="3.5"/>
+      <circle cx="134.9" cy="53.8" r="3.5"/>
+      <circle cx="146"   cy="60" r="3.5"/>
+      <circle cx="135.5" cy="65.9" r="3.5"/>
+      <circle cx="125.1" cy="71.8" r="3.5"/>
+      <circle cx="114"   cy="78" r="3.5"/>
+    </g>
+  </g>
+
+  <!-- CAMADA 2 — meio: os 7 furos em preto. Cada um cresce do próprio centro (scale 0->1),
+     dois de cada vez por coluna espelhada, até a ponta. Só aparece através dos furos
+     da camada 1 — por isso eles NÃO podem ficar dentro do mask. -->
+  <g clip-path="url(#btnClip)" fill="#000000">
+    <circle class="fill d1" cx="114"   cy="42"   r="3.5"/>
+    <circle class="fill d2" cx="124.5" cy="47.9" r="3.5"/>
+    <circle class="fill d3" cx="134.9" cy="53.8" r="3.5"/>
+    <circle class="fill d4" cx="146"   cy="60"   r="3.5"/>
+    <circle class="fill d5" cx="135.5" cy="65.9" r="3.5"/>
+    <circle class="fill d6" cx="125.1" cy="71.8" r="3.5"/>
+    <circle class="fill d7" cx="114"   cy="78"   r="3.5"/>
+  </g>
+
+  <!-- CAMADA 1 — topo: mesmo verde, com os círculos transparentes do chevron ">" -->
+  <g mask="url(#dotsMask)">
+    <rect x="20" y="20" width="220" height="80" fill="url(#neonFill)"/>
+    <rect x="20" y="20" width="220" height="80" fill="url(#sheen)"/>
+  </g>
+
+  <!-- Contorno (fecha a camada 1) -->
+  <rect x="20" y="20" width="220" height="80" rx="22"
+        fill="none" stroke="#D6FFD1" stroke-width="1.5" opacity="0.55"/>
+</svg>
